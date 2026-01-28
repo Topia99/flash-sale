@@ -1,0 +1,71 @@
+services:
+  authdb:
+    container_name: authdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: authdb
+      MYSQL_USER: auth
+      MYSQL_PASSWORD: authpw
+    ports:
+      - "3306:3306"
+    volumes:
+      - authdb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  catalogdb:
+    container_name: catalogdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: catalogdb
+      MYSQL_USER: catalog
+      MYSQL_PASSWORD: catalogpw
+    ports:
+      - "3307:3306"
+    volumes:
+      - catalogdb_data:/var:/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  inventorydb:
+    container_name: inventorydb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventorydb
+      MYSQL_USER: inventory
+      MYSQL_PASSWORD: inventorypw
+    ports:
+      - "3308:3306"
+    volumes:
+      - inventorydb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  orderdb:
+    container_name: orderdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: orderdb
+      MYSQL_USER: order
+      MYSQL_PASSWORD: orderpw
+    ports:
+      - "3309:3306"
+    volumes:
+      - orderdb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+
+volumes:
+  authdb_data:
+  catalogdb_data:
+  inventorydb_data:
+  orderdb_data:
+
+networks:
+  flashsale:
+    driver: "bridge"

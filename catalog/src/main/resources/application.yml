@@ -1,0 +1,15 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: catalog
+
+  datasource:
+    url: jdbc:mysql://localhost:3307/catalogdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: catalog
+    password: catalogpw
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false

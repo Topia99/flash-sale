@@ -1,0 +1,22 @@
+# ===== Maven =====
+target/
+**/target/
+
+# ===== Logs =====
+*.log
+
+# ===== OS =====
+.DS_Store
+
+# ===== IDE =====
+.idea/
+*.iml
+
+# ===== Spring Boot =====
+application-local.yml
+application-*.local.yml
+
+# ===== Docker / Database =====
+**/mysql-data/
+**/data/
+**/volume/

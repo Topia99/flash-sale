@@ -1,0 +1,20 @@
+services:
+  # Attach any extending service to the shared network
+  network-deploy-service:
+    networks:
+      - flashsale
+
+  # Base for mysql containers (healthcheck + network)
+  microservice-db-config:
+    extends:
+      service: network-deploy-service
+    image: mysql:8.0
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_0900_ai_ci"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-proot" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20

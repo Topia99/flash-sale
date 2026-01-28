@@ -25,11 +25,20 @@ Each service is an independent Spring Boot application with its own database.
 ### Start infrastructure (MySQL)
 
 ```bash
-docker compose up -d
+docker compose -f infra/docker-compose.yml up -d
+docker compose -f infra/docker-compose.yml ps
+```
+### Stop (MySQL)
+ ```bash
+ docker compose -f infra/docker-compose.yml down
+ ```
+
+### Reset (DANGEROUS: deletes volumes)
+```bash
+docker compose -f infra/docker-compose.yml down -v
 ```
 
-### Start services
-Each service can be started independently:
+### Start services (Each service)
 
 ```
 cd auth

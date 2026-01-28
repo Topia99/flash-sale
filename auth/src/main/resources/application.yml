@@ -6,9 +6,9 @@ spring:
     name: auth
 
   datasource:
-    url: jdbc:mysql://localhost:3306/authdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: auth
-    password: authpw
+    url: ${AUTH_DB_URL:jdbc:mysql://localhost:3306/authdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${AUTH_DB_USER:auth}
+    password: ${AUTH_DB_PASS:authpw}
   jpa:
     hibernate:
       ddl-auto: update

@@ -6,9 +6,9 @@ spring:
     name: order
 
   datasource:
-    url: jdbc:mysql://localhost:3309/orderdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: order
-    password: orderpw
+    url: ${ORDER_DB_URL:jdbc:mysql://localhost:3309/orderdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${ORDER_DB_USER:order}
+    password: ${ORDER_DB_PASS:orderpw}
   jpa:
     hibernate:
       ddl-auto: update

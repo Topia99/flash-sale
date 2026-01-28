@@ -1,0 +1,103 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [flashsale]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # AMQP
+      - "15672:15672" #Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [flashsale]
+
+  authdb:
+    container_name: authdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${AUTH_DB_NAME}
+      MYSQL_USER: ${AUTH_DB_USER}
+      MYSQL_PASSWORD: ${AUTH_DB_PASS}
+    ports:
+      - "3306:3306"
+    volumes:
+      - authdb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  catalogdb:
+    container_name: catalogdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${CATALOG_DB_NAME}
+      MYSQL_USER: ${CATALOG_DB_USER}
+      MYSQL_PASSWORD: ${CATALOG_DB_PASS}
+    ports:
+      - "3307:3306"
+    volumes:
+      - catalogdb_data:/var:/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  inventorydb:
+    container_name: inventorydb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${INVENTORY_DB_NAME}
+      MYSQL_USER: ${INVENTORY_DB_USER}
+      MYSQL_PASSWORD: ${INVENTORY_DB_PASS}
+    ports:
+      - "3308:3306"
+    volumes:
+      - inventorydb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+  orderdb:
+    container_name: orderdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${ORDER_DB_NAME}
+      MYSQL_USER: ${ORDER_DB_USER}
+      MYSQL_PASSWORD: ${ORDER_DB_PASS}
+    ports:
+      - "3309:3306"
+    volumes:
+      - orderdb_data:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: microservice-db-config
+
+
+volumes:
+  authdb_data:
+  catalogdb_data:
+  inventorydb_data:
+  orderdb_data:
+  redis_data:
+
+networks:
+  flashsale:
+    driver: "bridge"

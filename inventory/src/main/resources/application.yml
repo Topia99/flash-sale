@@ -6,9 +6,9 @@ spring:
     name: inventory
 
   datasource:
-    url: jdbc:mysql://localhost:3308/inventorydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: inventory
-    password: inventorypw
+    url: ${INVENTORY_DB_URL:jdbc:mysql://localhost:3308/inventorydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${INVENTORY_DB_USER:inventory}
+    password: ${INVENTORY_DB:PASS:inventorypw}
   jpa:
     hibernate:
       ddl-auto: update

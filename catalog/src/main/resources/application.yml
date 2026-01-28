@@ -6,9 +6,9 @@ spring:
     name: catalog
 
   datasource:
-    url: jdbc:mysql://localhost:3307/catalogdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: catalog
-    password: catalogpw
+    url: ${CATALOG_DB_URL:jdbc:mysql://localhost:3307/catalogdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${CATALOG_DB_USER:catalog}
+    password: ${CATALOG_DB_PASS:catalogpw}
   jpa:
     hibernate:
       ddl-auto: update

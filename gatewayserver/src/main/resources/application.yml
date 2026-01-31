@@ -1,0 +1,86 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      part: ${REDIS_PORT:6379}
+
+  cloud:
+    gateway:
+      routes:
+        - id: auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                # 每秒补充多少token（≈RPS）
+                redis-rate-limiter.replenishRate: ${RL_ORDER_RPS:20}
+                # 桶容量（允许突发）
+                redis-rate-limiter.burstCapacity: ${RL_ORDER_BURST:40}
+                # 按IP限流
+                key-resolver: "#{@ipKeyResolver}"
+
+        - id: catalog
+          uri: http://localhost:8082
+          predicates:
+            - Path=/catalog/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                # 每秒补充多少token（≈RPS）
+                redis-rate-limiter.replenishRate: ${RL_ORDER_RPS:20}
+                # 桶容量（允许突发）
+                redis-rate-limiter.burstCapacity: ${RL_ORDER_BURST:40}
+                # 按IP限流
+                key-resolver: "#{@ipKeyResolver}"
+
+        - id: inventory
+          uri: http://localhost:8083
+          predicates:
+            - Path=/inventory/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                # 每秒补充多少token（≈RPS）
+                redis-rate-limiter.replenishRate: ${RL_ORDER_RPS:20}
+                # 桶容量（允许突发）
+                redis-rate-limiter.burstCapacity: ${RL_ORDER_BURST:40}
+                # 按IP限流
+                key-resolver: "#{@ipKeyResolver}"
+
+        - id: order
+          uri: http://localhost:8084
+          predicates:
+            - Path=/orders/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                # 每秒补充多少token（≈RPS）
+                redis-rate-limiter.replenishRate: ${RL_ORDER_RPS:20}
+                # 桶容量（允许突发）
+                redis-rate-limiter.burstCapacity: ${RL_ORDER_BURST:40}
+                # 按IP限流
+                key-resolver: "#{@ipKeyResolver}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway.filter.ratelimit: DEBUG

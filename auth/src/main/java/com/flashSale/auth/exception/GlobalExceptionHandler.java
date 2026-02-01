@@ -15,4 +15,10 @@ public class GlobalExceptionHandler {
     public Map<String, Object> handleConflict(ConflictException e) {
         return Map.of("code", e.code, "message", e.getMessage());
     }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, Object> handleUnauthorized(UnauthorizedException e){
+        return Map.of("code", e.code, "message", e.getMessage());
+    }
 }

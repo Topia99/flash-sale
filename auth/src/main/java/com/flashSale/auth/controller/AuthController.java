@@ -1,5 +1,7 @@
 package com.flashSale.auth.controller;
 
+import com.flashSale.auth.dto.LoginRequest;
+import com.flashSale.auth.dto.LoginResponse;
 import com.flashSale.auth.dto.RegisterRequest;
 import com.flashSale.auth.dto.UserResponse;
 import com.flashSale.auth.service.AuthService;
@@ -21,5 +23,13 @@ public class AuthController {
     public UserResponse register(@Valid @RequestBody RegisterRequest req) {
         var u = auth.register(req);
         return new UserResponse(u.getId(), u.getUsername(), u.getEmail(), u.getRole());
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@Valid @RequestBody LoginRequest req){
+        var jwt = auth.login(req);
+
+        long expiresIn = jwt.getExpiresAt().getEpochSecond() - jwt.getIssuedAt().getEpochSecond();
+        return new LoginResponse(jwt.getTokenValue(), "Bearer", expiresIn);
     }
 }

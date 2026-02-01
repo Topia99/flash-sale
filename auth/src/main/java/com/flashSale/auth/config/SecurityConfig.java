@@ -15,7 +15,7 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+            http
                 // M2 阶段：纯 API，先关 CSRF（否则 POST /register 可能 403）
                 .csrf(csrf -> csrf.disable())
 
@@ -27,17 +27,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/ping", "/actuator/health").permitAll()
                         // 其他先都放行 or 先拦住看你节奏
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
 
                 // 不启用默认表单登录页面
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder(10); // cost=10 起步，后续压测再调
     }
 }

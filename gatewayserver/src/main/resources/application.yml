@@ -73,6 +73,10 @@ spring:
                 # 按IP限流
                 key-resolver: "#{@ipKeyResolver}"
 
+app:
+  jwt:
+    secret: ${JWT_SECRET:24a5b9e54cac54499777b9bc6f8f882a84346aeaf5e122094a14f4789b2d1db0}
+
 management:
   endpoints:
     web:

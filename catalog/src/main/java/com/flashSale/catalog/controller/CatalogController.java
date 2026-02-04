@@ -2,7 +2,6 @@ package com.flashSale.catalog.controller;
 
 import com.flashSale.catalog.dto.*;
 import com.flashSale.catalog.service.CatalogQueryService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

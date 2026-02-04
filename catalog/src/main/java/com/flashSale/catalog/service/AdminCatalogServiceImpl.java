@@ -1,5 +1,6 @@
 package com.flashSale.catalog.service;
 
+import com.flashSale.catalog.cache.CatalogCache;
 import com.flashSale.catalog.domain.Event;
 import com.flashSale.catalog.domain.EventStatus;
 import com.flashSale.catalog.domain.Ticket;
@@ -28,6 +29,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
     private final EventRepository eventRepo;
     private final TicketRepository ticketRepo;
 
+    private final CatalogCache cache;
+
     // ===== Event =====
 
     @Override
@@ -45,6 +48,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         event.setStatus(EventStatus.DRAFT);
 
         Event saved = eventRepo.save(event);
+
+        // Delete Cache
+        cache.evictEventDetail(saved.getId());
 
         return new EventResponse(
                 event.getId(),
@@ -96,6 +102,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         Event saved = eventRepo.save(e);
 
         // cache delete: event:{id}:detail （后面加 Redis）
+        cache.evictEventDetail(eventId);
+
         return new EventResponse(
                 saved.getId(),
                 saved.getTitle(),
@@ -169,6 +177,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         Event saved = eventRepo.save(e);
 
         // TODO: cache delete: event:{id}:detail
+        cache.evictEventDetail(eventId);
+
         return toEventResponse(saved);
     }
 
@@ -186,6 +196,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         Event saved = eventRepo.save(e);
 
         // TODO: cache delete: event:{id}:detail
+        cache.evictEventDetail(eventId);
+
         return toEventResponse(saved);
     }
 
@@ -203,6 +215,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         Event saved = eventRepo.save(e);
 
         // TODO: cache delete: event:{id}:detail
+        cache.evictEventDetail(eventId);
+
         return toEventResponse(saved);
     }
 
@@ -248,6 +262,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
         Ticket saved = ticketRepo.save(ticket);
 
         // TODO: cache delete: event:{id}:detail
+        cache.evictEventDetail(eventId);
+        cache.evictTicket(saved.getId());
+
         return new TicketResponse(
                 saved.getId(),
                 event.getId(),
@@ -297,6 +314,10 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
 
         Long eventId = saved.getEvent().getId();
         // TODO: cache delete: event:{id}:detail
+        cache.evictEventDetail(eventId);
+        cache.evictTicket(saved.getId());
+
+
         return toTicketResponse(saved, eventId);
     }
 
@@ -333,6 +354,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
 
         Long eventId = saved.getEvent().getId();
         // TODO: cache delete
+        cache.evictEventDetail(eventId);
+        cache.evictTicket(saved.getId());
+
         return toTicketResponse(saved, eventId);
     }
 
@@ -347,6 +371,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService{
 
         Long eventId = saved.getEvent().getId();
         // TODO: cache delete
+        cache.evictEventDetail(eventId);
+        cache.evictTicket(saved.getId());
+
         return toTicketResponse(saved, eventId);
     }
 

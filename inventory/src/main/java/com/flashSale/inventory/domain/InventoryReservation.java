@@ -21,7 +21,7 @@ import java.util.UUID;
 public class InventoryReservation {
     @Id
     @Column(name = "reservation_id", columnDefinition = "varchar(64)")
-    private UUID reservationId;
+    private String reservationId;
 
     @Column(name = "ticket_id", nullable = false)
     private Long ticketId;

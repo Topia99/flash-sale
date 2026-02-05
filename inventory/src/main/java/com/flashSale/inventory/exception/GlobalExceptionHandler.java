@@ -36,6 +36,12 @@ public class GlobalExceptionHandler {
                 .body(ApiError.of(e.getCode(), e.getMessage()));
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(NotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiError.of(e.getCode(), e.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldErrors().stream()

@@ -26,4 +26,9 @@ public class InventoryController {
     public ReservationResponse release(@PathVariable("reservationId") String reservationId){
         return reservationService.release(reservationId);
     }
+
+    @PostMapping("/reservations/{reservationId}/commit")
+    public ReservationResponse commit(@PathVariable("reservationId") String reservationId){
+        return reservationService.commit(reservationId);
+    }
 }

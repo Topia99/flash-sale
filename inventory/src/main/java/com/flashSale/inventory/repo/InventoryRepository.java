@@ -29,4 +29,27 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     int reserveAtomic(
             @Param("ticketId") long ticketId,
             @Param("qty") int qty);
+
+
+    /**
+     * Release Atomic update:
+     * reserved -= qty, available += qty
+     * only if reserved >= qty
+     *
+     * @return rows affected (1 = success, 0 = insufficient or not found)
+     */
+    @Modifying
+    @Transactional
+    @Query(value = """
+            UPDATE inventory
+            SET reserved = reserved - :qty,
+                available = available + :qty,
+                version = version + 1
+            WHERE ticket_id = :ticketId
+                AND reserved >= :qty
+            """, nativeQuery = true)
+    int releaseAtomic(
+            @Param("ticketId") long ticketId,
+            @Param("qty") int qty
+    );
 }

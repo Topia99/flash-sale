@@ -5,10 +5,7 @@ import com.flashSale.inventory.dto.ReserveRequest;
 import com.flashSale.inventory.service.InventoryReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/inventory")
@@ -23,5 +20,10 @@ public class InventoryController {
                 request.ticketId(),
                 request.qty()
         );
+    }
+
+    @PostMapping("/reservations/{reservationId}/release")
+    public ReservationResponse release(@PathVariable("reservationId") String reservationId){
+        return reservationService.release(reservationId);
     }
 }

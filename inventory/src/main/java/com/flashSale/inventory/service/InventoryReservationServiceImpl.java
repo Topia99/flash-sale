@@ -88,6 +88,56 @@ public class InventoryReservationServiceImpl implements InventoryReservationServ
         throw new ConflictException("INSUFFICIENT_STOCK", "insufficient stock");
     }
 
+    @Override
+    @Transactional
+    public ReservationResponse release(String reservationId) {
+        // 1) find reservation, not found return 404
+        InventoryReservation reservation = reservationRepo.findById(reservationId)
+                .orElseThrow(() -> new NotFoundException("NOT_FOUND", "reservation id not found"));
+
+        ReservationStatus prevStatus = reservation.getStatus();
+
+        // Idempotent
+        if(prevStatus == ReservationStatus.RELEASED){
+            log.info("release idempotent: reservationId={}, ticketId={}, qty={}, prevStatus={}, outcome=NOOP_ALREADY_RELEASED",
+                    reservationId, reservation.getTicketId(), reservation.getQty(), prevStatus);
+            return toResponse(reservation);
+        }
+
+        // 2) state machine protection
+        if(prevStatus == ReservationStatus.COMMITTED){
+            log.warn("release rejected: reservationId={}, ticketId={}, qty={}, prevStatus={}, outcome=INVALID_STATE_COMMITTED",
+                    reservationId, reservation.getTicketId(), reservation.getQty(), prevStatus);
+            throw new ConflictException("INVALID_STATE", "reservation already committed, unable to release");
+        }
+
+        if(prevStatus == ReservationStatus.INIT || prevStatus== ReservationStatus.FAILED){
+            log.warn("release rejected: reservationId={}, ticketId={}, qty={}, prevStatus={}, outcome=INVALID_STATE_NOT_RESERVED",
+                    reservationId, reservation.getTicketId(), reservation.getQty(), prevStatus);
+            throw new ConflictException("INVALID_STATE", "only reservation state can be release");
+        }
+
+        // 3) Atomic release
+        int rows = inventoryRepo.releaseAtomic(reservation.getTicketId(), reservation.getQty());
+
+        if(rows == 1) {
+            reservation.setStatus(ReservationStatus.RELEASED);
+            reservationRepo.save(reservation);
+
+            log.info("release success: reservationId={}, ticketId={}, qty={}, prevStatus={}",
+                    reservationId, reservation.getTicketId(), reservation.getQty(), prevStatus);
+
+            return toResponse(reservation);
+        }
+
+        // 4) Insufficient reservation
+        log.error("release atomic update failed (rows=0): reservationId={}, ticketId={}, qty={}, status={}",
+                reservationId, reservation.getTicketId(), reservation.getQty(), reservation.getStatus());
+
+        throw new ConflictException("INVALID_STATE", "release failed due to inconsistent inventory state");
+
+    }
+
     private ReservationResponse toResponse(InventoryReservation r){
         return new ReservationResponse(
                 r.getReservationId(),

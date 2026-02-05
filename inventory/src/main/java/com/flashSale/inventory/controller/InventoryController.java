@@ -1,12 +1,34 @@
 package com.flashSale.inventory.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.flashSale.inventory.dto.ReservationResponse;
+import com.flashSale.inventory.dto.ReserveRequest;
+import com.flashSale.inventory.service.InventoryReservationService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/inventory")
+@RequiredArgsConstructor
 public class InventoryController {
-    @GetMapping("ping")
-    public String ping(){
-        return "inventory pong";
+    private final InventoryReservationService reservationService;
+
+    @PostMapping("/reservations")
+    public ReservationResponse reserve(@Valid @RequestBody ReserveRequest request) {
+        return reservationService.reserve(
+                request.reservationId(),
+                request.ticketId(),
+                request.qty()
+        );
+    }
+
+    @PostMapping("/reservations/{reservationId}/release")
+    public ReservationResponse release(@PathVariable("reservationId") String reservationId){
+        return reservationService.release(reservationId);
+    }
+
+    @PostMapping("/reservations/{reservationId}/commit")
+    public ReservationResponse commit(@PathVariable("reservationId") String reservationId){
+        return reservationService.commit(reservationId);
     }
 }

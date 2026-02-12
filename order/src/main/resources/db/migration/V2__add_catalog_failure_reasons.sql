@@ -1,0 +1,9 @@
+ALTER TABLE orders
+    MODIFY COLUMN failure_reason ENUM(
+        'INSUFFICIENT_STOCK',
+        'INVENTORY_TIMEOUT',
+        'INVENTORY_ERROR',
+        'INVALID_REQUEST',
+        'CATALOG_ERROR',
+        'CATALOG_TIMEOUT'
+    ) NULL;

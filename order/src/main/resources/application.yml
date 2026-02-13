@@ -14,6 +14,16 @@ spring:
       ddl-auto: update
     open-in-view: false
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 
 inventory:
   base-url: http://localhost:8083

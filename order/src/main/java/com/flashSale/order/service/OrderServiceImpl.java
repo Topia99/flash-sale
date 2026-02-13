@@ -7,6 +7,8 @@ import com.flashSale.order.dto.CreateOrderRequest;
 import com.flashSale.order.dto.OrderResponse;
 import com.flashSale.order.dto.ReservationResponse;
 import com.flashSale.order.dto.TicketResponse;
+import com.flashSale.order.events.OrderCreatedEvent;
+import com.flashSale.order.events.OrderEventPublisher;
 import com.flashSale.order.exception.*;
 import com.flashSale.order.repository.IdempotencyKeyRepository;
 import com.flashSale.order.repository.OrderRepository;
@@ -33,6 +35,7 @@ public class OrderServiceImpl implements OrderService{
     private final JdbcTemplate jdbcTemplate;
     private final InventoryClient inventoryClient;
     private final CatalogClient catalogClient;
+    private final OrderEventPublisher publisher;
 
     /** 返回值里带 created=true/false 用于 controller 决定 201 or 200 */
     public record CreateResult(OrderResponse response, boolean created) {}
@@ -277,6 +280,17 @@ public class OrderServiceImpl implements OrderService{
         markIdemCompleted(userId, idemKey, confirmed.getId());
         log.info("Idem marked COMPLETED (CONFIRMED): userId={}, idemKey={}, orderId={}",
                 userId, idemKey, confirmed.getId());
+
+        // after order saved successfully (orderId exists)
+        publisher.publishOrderCreated(
+                order.getId(),
+                userId,
+                idemKey,
+                null,
+                normalized.stream()
+                        .map(it -> new OrderCreatedEvent.Item(it.ticketId(), it.qty()))
+                        .toList()
+        );
 
         return new CreateResult(toResponse(confirmed), true);
     }

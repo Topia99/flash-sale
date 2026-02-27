@@ -1,6 +1,8 @@
 package com.flashSale.order.controller;
 
+import com.flashSale.order.domain.OrderStatus;
 import com.flashSale.order.dto.CreateOrderRequest;
+import com.flashSale.order.dto.OrderDetailResponse;
 import com.flashSale.order.dto.OrderResponse;
 import com.flashSale.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -22,15 +24,12 @@ public class OrderController {
             @RequestBody @Valid CreateOrderRequest req,
             @RequestHeader("X-User-Id") Long userId
     ) {
-        var result = orderService.createOrder(userId, idempotencyKey, req);
-        if(result.created()) {
-            return ResponseEntity.status(201).body(result.response());
-        }
-        return ResponseEntity.ok(result.response());
+        OrderResponse res = orderService.createOrder(userId, idempotencyKey, req);
+        return ResponseEntity.accepted().body(res);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> getOrderById(
+    public ResponseEntity<OrderDetailResponse> getOrderById(
             @PathVariable("id") Long id,
             @RequestHeader("X-User-Id") Long userId)
     {

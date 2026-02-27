@@ -14,6 +14,28 @@ spring:
       ddl-auto: update
     open-in-view: false
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: order-inventory-result-g1
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.flashSale.order.events.InventoryResultEvent
+        spring.json.use.type.headers: false
+    listener:
+      ack-mode: manual
+
 
 inventory:
   base-url: http://localhost:8083

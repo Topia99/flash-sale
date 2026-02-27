@@ -2,10 +2,7 @@ package com.flashSale.order.domain;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,7 +18,7 @@ import java.util.List;
         @Index(name = "idx_orders_user_created_at", columnList = "user_id,created_at")
     }
 )
-@Getter @Setter @AllArgsConstructor @NoArgsConstructor
+@Getter @Setter @AllArgsConstructor @NoArgsConstructor @Builder
 public class Order {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,7 +28,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status = OrderStatus.PROCESSING;
 
     @Column(name = "total_amount", precision=10, scale=2)
     private BigDecimal totalAmount;

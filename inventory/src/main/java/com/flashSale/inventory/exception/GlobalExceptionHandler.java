@@ -31,6 +31,12 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<ApiError> handleOutOfStock(OutOfStockException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of("OUT_OF_STOCK", e.getMessage()));
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiError> handleConflict(ConflictException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

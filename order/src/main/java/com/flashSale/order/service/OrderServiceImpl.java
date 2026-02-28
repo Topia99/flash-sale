@@ -11,6 +11,7 @@ import com.flashSale.order.repository.IdempotencyKeyRepository;
 import com.flashSale.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.actuate.web.exchanges.HttpExchange;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -42,6 +43,15 @@ public class OrderServiceImpl implements OrderService{
     @Override
     @Transactional
     public OrderResponse createOrder(Long userId, String idemKey, CreateOrderRequest req) {
+       if(idemKey == null || idemKey.isBlank()) {
+          throw new BadRequestException("Missing Idempotency-Key");
+       }
+
+        // currency null-safe (avoid NPE)
+        String currency = (req == null || req.currency() == null || req.currency().isBlank())
+                ? "USD"
+                : req.currency().trim().toUpperCase();
+
 
         // 0) normalize items (合并重复 ticketId)
         List<OrderCreatedEvent.Item> items = normalizeItems(req);
@@ -58,14 +68,16 @@ public class OrderServiceImpl implements OrderService{
             if(orderId == null) {
                 // 极少见：idemKey 插入成功但 orderId 还没绑定（并发窗口）
                 // 这里返回 PROCESSING 比较合理
-                return new OrderResponse(null, OrderStatus.PROCESSING, null);
+               return orderRepo.findByUserIdAndIdempotencyKey(userId, idemKey)
+                       .map(o -> new OrderResponse(o.getId(), o.getStatus(), o.getFailureReason()))
+                       .orElseThrow(() -> new RequestInProgressException("Order request is still in progress"));
             }
 
             Order order = orderRepo.findById(existing.getOrderId())
                     .orElseThrow(() -> {
                         log.error("Idem anomaly: COMPLETED but order not found. userId={}, idemKey={}, orderId={}",
                                 userId, idemKey, orderId);
-                        return new RequestInProgressException();
+                        return new IllegalStateException("IdemKey bound to missing order");
                     });
 
             return new OrderResponse(order.getId(), order.getStatus(), order.getFailureReason());
@@ -77,7 +89,7 @@ public class OrderServiceImpl implements OrderService{
                 .userId(userId)
                 .idempotencyKey(idemKey)
                 .status(OrderStatus.PROCESSING)
-                .currency(req.currency().isBlank() ? "USD" : req.currency())
+                .currency(currency)
                 .createdAt(now)
                 .failureReason(null)
                 .build();
@@ -159,7 +171,7 @@ public class OrderServiceImpl implements OrderService{
                 .orElseThrow(() -> new NotFoundException("Idempotency key not found"));
 
         if (idem.getStatus() == IdempotencyStatus.IN_PROGRESS) {
-            throw new RequestInProgressException();
+            throw new RequestInProgressException("Order in progress");
         }
 
         Long orderId = idem.getOrderId();
@@ -167,14 +179,16 @@ public class OrderServiceImpl implements OrderService{
         if (orderId == null) {
             // 理论不应该发生：COMPLETED 但没 orderId
             log.error("Idem anomaly: COMPLETED but orderId is null. userId={}, idemKey={}", userId, idemKey);
-            throw new RequestInProgressException();
+            return orderRepo.findByUserIdAndIdempotencyKey(userId, idemKey)
+                    .map(o -> new OrderResponse(o.getId(), o.getStatus(), o.getFailureReason()))
+                    .orElseThrow(() -> new IllegalStateException("IdemKey bound to missing order"));
         }
 
         Order order = orderRepo.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> {
                     log.error("Idem anomaly: COMPLETED but order not found. userId={}, idemKey={}, orderId={}",
                             userId, idemKey, orderId);
-                    return new RequestInProgressException();
+                    return new IllegalStateException("IdemKey bound to missing order");
                 });
 
         return new OrderResponse(order.getId(), order.getStatus(), order.getFailureReason());
@@ -203,6 +217,10 @@ public class OrderServiceImpl implements OrderService{
     }
 
     private void tryInsertIdemInProgress(Long userId, String idemKey) {
+        if(idemKey == null || idemKey.isBlank()){
+            throw new IllegalArgumentException("Idempotency Key is null or blank");
+        }
+
         String sql = """
                 INSERT INTO idempotency_keys
                     (user_id, idempotency_key, status, order_id)

@@ -68,8 +68,11 @@ public class Order {
     /* ---------- helpers ---------- */
 
     public void addItem(OrderItem orderItem) {
-        orderItem.setOrder(this);
+        if(this.orderItems == null) {
+            this.orderItems = new ArrayList<>();
+        }
         this.orderItems.add(orderItem);
+        orderItem.setOrder(this);
     }
 
     public void markFailed(FailureReason reason) {

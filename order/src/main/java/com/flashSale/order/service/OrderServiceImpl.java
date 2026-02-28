@@ -96,28 +96,72 @@ public class OrderServiceImpl implements OrderService{
 
         order = orderRepo.saveAndFlush(order);
 
-        // 添加OrderItems
-        List<OrderItem> itemList = new ArrayList<>();
-        for(OrderCreatedEvent.Item it : items) {
-            OrderItem newItem = new OrderItem();
-            newItem.setTicketId(it.ticketId());
-            newItem.setOrder(order);
-            newItem.setQty(it.qty());
-            newItem.setUnitPrice(BigDecimal.ZERO);
-
-            itemList.add(newItem);
-        }
-        order.setOrderItems(itemList);
-        order = orderRepo.save(order);
-
-
         // 3) 绑定 idemKey -> orderId (让重试可以拿到同一个 orderId）
         idemRepo.bindOrderIfEmpty(userId, idemKey, order.getId());
 
-        // 4) publish OrderCreated
+        // 4) 添加OrderItems
+        FailureReason getPriceFailure = null;
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<OrderItem> pricedItems = new ArrayList<>();
+
+        for(OrderCreatedEvent.Item it : items) {
+            try {
+                TicketResponse ticket = catalogClient.getTicket(it.ticketId());
+
+                // Create OrderItem
+                OrderItem item = new OrderItem();
+                item.setTicketId(it.ticketId());
+                item.setQty(it.qty());
+                item.setUnitPrice(ticket.getPrice());
+
+                BigDecimal lineAmount = ticket.getPrice().multiply(BigDecimal.valueOf(it.qty()));
+                totalAmount = totalAmount.add(lineAmount);
+
+                pricedItems.add(item);
+            } catch (TicketNotFoundException e) {
+                getPriceFailure = FailureReason.INVALID_REQUEST;
+                log.warn("Catalog Ticket not found: ticketId={}", it.ticketId());
+                break;
+            } catch (CatalogErrorException e) {
+                getPriceFailure = FailureReason.CATALOG_ERROR;
+                log.warn("Catalog error: ticketId={}", it.ticketId());
+                break;
+            } catch(CatalogTimeoutException e) {
+                getPriceFailure = FailureReason.CATALOG_TIMEOUT;
+                log.warn("Catalog timeout: ticketId={}", it.ticketId(), e);
+                break;
+            } catch (Exception e) {
+                getPriceFailure = FailureReason.CATALOG_ERROR;
+                log.warn("Catalog Unkonwn error: ticketId={}", it.ticketId(), e);
+                break;
+            }
+        }
+
+        if(getPriceFailure != null) {
+            order.setStatus(OrderStatus.FAILED);
+            order.setFailureReason(getPriceFailure);
+            order = orderRepo.saveAndFlush(order);
+
+
+            // 按 failureReason 抛对应异常（或统一抛一个但带 reason）
+            switch (getPriceFailure) {
+                case INVALID_REQUEST -> throw new BadRequestException("Invalid ticketId");
+                case CATALOG_TIMEOUT -> throw new CatalogTimeoutException("Catalog timeout");
+                default -> throw new CatalogErrorException("Catalog error");
+            }
+        }
+
+        // 5) 添加item with unit price, 更新order
+        order.setTotalAmount(totalAmount);
+        pricedItems.forEach(order::addItem);
+        order = orderRepo.saveAndFlush(order);
+
+
+
+        // 6) publish OrderCreated
         publisher.publishOrderCreated(order.getId(), userId, idemKey, null, items);
 
-        // 5) 5) 返回 202 语义（controller 负责用 accepted）
+        // 7) 返回 202 语义（controller 负责用 accepted）
         return new OrderResponse(order.getId(), OrderStatus.PROCESSING, null);
 
     }

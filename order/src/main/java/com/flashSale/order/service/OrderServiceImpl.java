@@ -4,9 +4,12 @@ import com.flashSale.order.client.catalog.CatalogClient;
 import com.flashSale.order.client.inventory.InventoryClient;
 import com.flashSale.order.domain.*;
 import com.flashSale.order.dto.*;
+import com.flashSale.order.events.EventEnvelope;
 import com.flashSale.order.events.OrderCreatedEvent;
 import com.flashSale.order.events.OrderEventPublisher;
+import com.flashSale.order.events.OrderEventType;
 import com.flashSale.order.exception.*;
+import com.flashSale.order.outbox.OutboxService;
 import com.flashSale.order.repository.IdempotencyKeyRepository;
 import com.flashSale.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +38,7 @@ public class OrderServiceImpl implements OrderService{
     private final JdbcTemplate jdbcTemplate;
     private final InventoryClient inventoryClient;
     private final CatalogClient catalogClient;
-    private final OrderEventPublisher publisher;
+    private final OutboxService outboxService;
 
     /** 返回值里带 created=true/false 用于 controller 决定 201 or 200 */
     public record CreateResult(OrderResponse response, boolean created) {}
@@ -156,10 +159,32 @@ public class OrderServiceImpl implements OrderService{
         pricedItems.forEach(order::addItem);
         order = orderRepo.saveAndFlush(order);
 
+        // build event envelope + event
+        EventEnvelope envelope = EventEnvelope.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType(OrderEventType.ORDER_CREATED)
+                .occurredAt(Instant.now())
+                .traceId(null)
+                .orderId(order.getId())
+                .userId(userId)
+                .idempotencyKey(idemKey)
+                .build();
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                envelope,
+                items
+        );
 
 
-        // 6) publish OrderCreated
-        publisher.publishOrderCreated(order.getId(), userId, idemKey, null, items);
+
+
+        // 6) submit order to Outbox
+        outboxService.enqueueOrderCreated(
+                "ORDER",
+                order.getId(),
+                "ORDER_CREATED",
+                event
+        );
 
         // 7) 返回 202 语义（controller 负责用 accepted）
         return new OrderResponse(order.getId(), OrderStatus.PROCESSING, null);

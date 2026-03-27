@@ -5,6 +5,7 @@ import com.flashSale.inventory.domain.ReservationStatus;
 import com.flashSale.inventory.dto.ReservationResponse;
 import com.flashSale.inventory.exception.ConflictException;
 import com.flashSale.inventory.exception.NotFoundException;
+import com.flashSale.inventory.exception.OutOfStockException;
 import com.flashSale.inventory.repo.InventoryRepository;
 import com.flashSale.inventory.repo.ReservationRepository;
 import lombok.RequiredArgsConstructor;
@@ -85,7 +86,7 @@ public class InventoryReservationServiceImpl implements InventoryReservationServ
         log.info("reserve insufficient: reservationId={}, ticketId={}, qty={}",
                 reservationId, ticketId, qty);
 
-        throw new ConflictException("INSUFFICIENT_STOCK", "insufficient stock");
+        throw new OutOfStockException("OUT_OF_STOCK: ticket=" + ticketId);
     }
 
     @Override
